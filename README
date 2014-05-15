@@ -1,0 +1,109 @@
+********************************************************************************
+Treatment library
+********************************************************************************
+
+--------------------------------------------------------------------------------
+Compilation
+--------------------------------------------------------------------------------
+
+Use your favorite compiler (however we recommend the one used to compile VLC and
+the rem module) and use it to create a shared library.
+
+example :
+gcc -shared -fPIC example1.c -o example1.so
+
+
+--------------------------------------------------------------------------------
+Usage
+--------------------------------------------------------------------------------
+
+See the rem project README.
+
+
+--------------------------------------------------------------------------------
+Create your own treatment
+--------------------------------------------------------------------------------
+
+A treatment is provided as a shared library defining some functions implemented
+thanks to an API consisting of two C header files : macros.h and rgb_image.h.
+
+For now, two formats can be passed as input :
+ - packed RGB 32 bits
+ - planar RGB
+
+A valid library :
+ - defines at least a function handling one of the two formats :
+    - planar_rgb_image_t
+    - packed_rgb32_image_t
+ - is configured correctly
+ - uses calls to the API in the bodies of the functions
+
+1. Prototypes
+-------------
+
+Here is the valid prototype for a treatment function :
+
+ - for planar RGB :
+   static void tr(const planar_rgb_image_t* in_image,
+                  planar_rgb_image_t* out_image,
+                  void* ptr);
+
+ - for packed RGB 32 bits :
+   static void tr(const packed_rgb32_image_t* in_image,
+                  packed_rgb32_image_t* out_image,
+                  void* void_pointer);
+
+2. Configuration
+----------------
+
+To configure the library, a configuration block must be added in the global
+scope :
+CONFIG_START
+.
+.
+.
+CONFIG_END
+
+Between CONFIG_START and CONFIG_END, you can add the following declarations :
+ - Declaration of the supported formats :
+    - PLANAR_RGB_HANDLE(function); // declares "function" as the function to
+                                   // be called on planar RGB
+    - PACKED_RGB32_HANDLE(function); // declares "function" as the function to
+                                     // be called on packed RGB 32 bits
+
+ - Declaration of the initialization and finalization functions :
+    - void PLANAR_RGB_INIT(void function (void**))
+    - void PACKED_RGB32_INIT(void function (void**))
+   These functions are called before the treatment begins
+
+    - void PLANAR_RGB_FINALIZE(void function (void**))
+    - void PACKED_RGB32_FINALIZE(void function (void**))
+   These functions are called after the treatment ends
+
+ - Declaration of statistics :
+    - INT_STAT(const char* str);  // declares an integer statisctic "str"
+    - TIME_STAT(const char* str); // declares a time statistic "str"
+   These statistics can then be used in your code.
+
+3. Bodies
+---------
+
+The following calls can be used for the statistics defined in the configuration
+block :
+ - time statistics :
+    - BEGIN_TIME_STAT(const char* str);
+    - END_TIME_STAT(const char* str);
+   The time is measured between the call to BEGIN_TIME_STAT and the call
+   to END_TIME_STAT.
+
+ - integer statistics :
+    - SET_INT_STAT(const char* str, int value); //sets the value
+                                                // of the statistic "str"
+
+ - on-screen display :
+    - DRAW_LINE(int x1, int y1, int x2, int y2); // draw a line between pixels
+                                                 // (x1,y1) and (x2,y2)
+
+    - DRAW_RECTANGLE(int x1, int y1, int x2, int y2) // draw a rectangle
+                                                     // between pixels
+                                                     // (x1,y1) and (x2,y2)
